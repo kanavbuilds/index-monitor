@@ -57,7 +57,7 @@ config/
 src/
   js/
     app.js                  Orchestration, refresh loop, event handlers
-    api.js                  Network layer (proxyFetch, fetchIndex)
+    api.js                  Batched network layer (proxyFetch, fetchAllIndices)
     charts.js               SVG sparkline generation
     formatters.js           Price and change formatting
     map.js                  Leaflet map initialization and marker management

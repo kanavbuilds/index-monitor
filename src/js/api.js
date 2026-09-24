@@ -51,8 +51,8 @@ async function proxyFetch(url) {
         }
       }
 
-      // Yahoo Finance always returns { chart: { result: [...] } }
-      if (data && data.chart) return data;
+      // Yahoo's chart endpoint returns `chart`; the batched endpoint returns `spark`.
+      if (data && (data.chart || data.spark)) return data;
 
       errors.push(`${proxyUrl.substring(0, 60)}... => unexpected shape`);
     } catch (err) {
@@ -68,30 +68,9 @@ async function proxyFetch(url) {
 }
 
 /**
- * Fetch a single index from Yahoo Finance.
+ * Normalizes one Yahoo chart result into the shape used by the UI.
  */
-async function fetchIndex(index) {
-  // Unique per-request cache bust so AllOrigins/Cloudflare never serves a stale
-  // or error-cached response from a different symbol's fetch.
-  const cacheBust = Date.now() + Math.floor(Math.random() * 100000);
-  const url =
-    YAHOO_CHART_BASE +
-    encodeURIComponent(index.sym) +
-    `?range=${API_CONFIG.range}&interval=${API_CONFIG.interval}&_=${cacheBust}`;
-
-  let json;
-  try {
-    json = await proxyFetch(url);
-  } catch (err) {
-    console.error(`Failed to fetch ${index.sym}:`, err.message);
-    throw err;
-  }
-
-  if (!json || !json.chart || !json.chart.result || !json.chart.result[0]) {
-    throw new Error(`Invalid response for ${index.sym}`);
-  }
-
-  const result = json.chart.result[0];
+function parseYahooResult(index, result) {
   if (!result.meta) throw new Error(`Missing meta for ${index.sym}`);
   const meta = result.meta;
 
@@ -157,4 +136,35 @@ async function fetchIndex(index) {
     days,
     ok: true,
   };
+}
+
+/**
+ * Fetches every index in one request. Yahoo's spark endpoint accepts a symbol
+ * list, which avoids hammering the public proxy with 19 separate calls.
+ */
+async function fetchAllIndices(indices) {
+  const cacheBust = Date.now() + Math.floor(Math.random() * 100000);
+  const symbols = indices.map((index) => index.sym).join(",");
+  const url =
+    "https://query1.finance.yahoo.com/v7/finance/spark" +
+    `?symbols=${encodeURIComponent(symbols)}` +
+    `&range=${API_CONFIG.range}&interval=${API_CONFIG.interval}&_=${cacheBust}`;
+
+  const json = await proxyFetch(url);
+  const sparkResults = json?.spark?.result;
+  if (!Array.isArray(sparkResults)) throw new Error("Invalid batched market response");
+
+  const responsesBySymbol = new Map(
+    sparkResults.map((entry) => [entry.symbol, entry.response?.[0]])
+  );
+
+  return indices.map((index) => {
+    const result = responsesBySymbol.get(index.sym);
+    if (!result) return { ...index, ok: false, err: true };
+    try {
+      return parseYahooResult(index, result);
+    } catch {
+      return { ...index, ok: false, err: true };
+    }
+  });
 }

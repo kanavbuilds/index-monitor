@@ -11,7 +11,7 @@ Index Monitor/
   src/
     js/
       app.js               # Orchestration (init, refresh, events)
-      api.js               # Network layer (proxyFetch, fetchIndex)
+      api.js               # Batched network layer (proxyFetch, fetchAllIndices)
       charts.js            # SVG sparkline generation
       formatters.js        # Price and change formatting
       map.js               # Leaflet map setup and marker management
@@ -43,5 +43,5 @@ never triggers a preflight OPTIONS request.
 
 - **Leaflet.js** -- Interactive map rendering
 - **Yahoo Finance v8 chart API** -- Market data source
-- **CORS Proxies (AllOrigins, corsproxy.io)** -- Bypass browser CORS
+- **AllOrigins CORS proxy** -- Carries one batched market request around browser CORS
 - **Intl.DateTimeFormat** -- Timezone-aware date handling
