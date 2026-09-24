@@ -1,8 +1,8 @@
-# Global Daily Index Monitor
+# World Index Monitor
 
-A lightweight, client-side dashboard that plots 19 major stock market indices on an interactive world map. Built as a static site for GitHub Pages -- no backend, no API keys, no build step.
+A lightweight dashboard that shows the live trading status of 19 major stock market indices on an interactive world map. Price data is loaded when the public feed is available; market hours always work locally with no API key.
 
-**[Live Demo](https://kanavb2.github.io/index-monitor/)**
+**[Live Demo](https://kanavbuilds.github.io/index-monitor/)**
 
 ## Tracked Indices
 
@@ -31,10 +31,11 @@ A lightweight, client-side dashboard that plots 19 major stock market indices on
 ## Features
 
 - Interactive Leaflet world map with color-coded markers at each exchange city
+- Always-available open/closed market status, computed in each exchange's timezone
 - **Open markets** shown as bright green or red dots with a glow effect
 - **Closed markets** shown as smaller muted ring-style dots displaying the last session date on hover
 - Click any marker for a detailed popup with current price, daily change, sparkline chart, intraday range, and previous close
-- Streaming data load -- markers update progressively as data arrives
+- Progressive price-data loading with a graceful market-hours fallback
 - Summary panel with advancing/declining counts, average change, and market sentiment indicator
 - Timezone-aware session detection using `Intl.DateTimeFormat` and hardcoded exchange hours
 - Manual refresh button and optional 60-second auto-refresh toggle
@@ -42,7 +43,7 @@ A lightweight, client-side dashboard that plots 19 major stock market indices on
 
 ## How It Works
 
-Market data is fetched client-side from the Yahoo Finance v8 chart API (`range=5d`, `interval=5m`) through the [AllOrigins](https://allorigins.win/) CORS proxy. Requests are sent in small batches to stay within rate limits. The AllOrigins `/get` endpoint wraps upstream responses in a JSON envelope (`{ contents, status }`), which the app unwraps before parsing.
+Market data is fetched client-side from the Yahoo Finance chart API through a public CORS proxy. Because public proxies can be unavailable, prices are treated as an enhancement: the map, exchange locations, and open/closed market status remain useful without them.
 
 Session state (open vs. closed) is computed from each exchange's timezone and trading hours. No server-side code, API keys, or scheduled jobs are involved -- the page fetches live data on every load and refresh.
 

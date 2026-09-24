@@ -126,6 +126,21 @@ function renderSummary(list, total) {
 
   let html = `<div class="panel-heading">Market Overview</div>`;
 
+  if (loaded.length === 0) {
+    const openMarkets = INDICES.filter((index) => getSessionState(index) === "open");
+    const closedCount = INDICES.length - openMarkets.length;
+    html += `<div class="panel-date">Right now</div>`;
+    html += `<div class="panel-row"><span class="panel-dot live"></span><span class="panel-label">Open markets</span><span class="panel-val">${openMarkets.length}</span></div>`;
+    html += `<div class="panel-row"><span class="panel-dot closed"></span><span class="panel-label">Closed markets</span><span class="panel-val">${closedCount}</span></div>`;
+    if (openMarkets.length) {
+      html += `<div class="panel-open-list">${openMarkets.map((index) => index.name).join(" · ")}</div>`;
+    }
+    html += `<div class="panel-divider"></div>`;
+    html += `<div class="panel-progress">${loading ? "Loading price data…" : "Price feed unavailable · market hours still update live"}</div>`;
+    document.getElementById("summaryPanel").innerHTML = html;
+    return;
+  }
+
   for (let i = 0; i < sortedDates.length; i++) {
     const dateKey = sortedDates[i];
     const group = dateGroups[dateKey];

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Global Daily Index Monitor</title>
+  <title>World Index Monitor</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,10 @@
   <div class="app">
     <header class="map-header">
       <div class="hdr-left">
-        <h1>Global Daily Index Monitor</h1>
+        <div class="title-row">
+          <h1>World Index Monitor</h1>
+          <span class="index-count">19 indices</span>
+        </div>
         <p id="headerDate"></p>
       </div>
       <div class="hdr-right">
@@ -26,7 +29,8 @@
           </span>
           Auto-refresh 60 s
         </label>
-        <span class="ts" id="ts">&mdash;</span>
+        <span class="feed-status" id="feedStatus">Market hours live</span>
+        <span class="ts" id="ts">Prices not loaded</span>
         <button class="btn-refresh" id="btnRef">
           <svg class="ico-ref" width="15" height="15" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -41,6 +45,12 @@
     <div id="map"></div>
 
     <div class="map-panel" id="summaryPanel"></div>
+    <div class="map-legend" aria-label="Map legend">
+      <span><i class="legend-dot open"></i> Open</span>
+      <span><i class="legend-dot closed"></i> Closed</span>
+      <span><i class="legend-dot up"></i> Up</span>
+      <span><i class="legend-dot down"></i> Down</span>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

@@ -15,14 +15,15 @@ function initMap() {
     minZoom: 2,
     maxZoom: 8,
     zoomControl: false,
-    attributionControl: false,
+    attributionControl: true,
     worldCopyJump: true,
   });
 
-  L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
-    { maxZoom: 19, subdomains: "abcd" }
-  ).addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    subdomains: "abc",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
 
   L.control.zoom({ position: "topright" }).addTo(map);
 }
@@ -32,17 +33,18 @@ function initMap() {
  */
 function placeLoadingMarkers() {
   INDICES.forEach((idx) => {
+    const isOpen = getSessionState(idx) === "open";
     const marker = L.circleMarker([idx.lat, idx.lng], {
-      radius: 6,
-      fillColor: "#525c74",
-      fillOpacity: 0.6,
-      color: "#525c74",
-      weight: 3,
-      opacity: 0.25,
+      radius: isOpen ? 8 : 6,
+      fillColor: isOpen ? "#60a5fa" : "#334155",
+      fillOpacity: isOpen ? 0.92 : 0.55,
+      color: isOpen ? "#93c5fd" : "#64748b",
+      weight: isOpen ? 5 : 2,
+      opacity: isOpen ? 0.4 : 0.8,
     }).addTo(map);
 
     marker.bindTooltip(
-      `<span class="tt-name">${idx.name}</span> <span class="tt-pct" style="color:var(--text-muted)">loading\u2026</span>`,
+      `<span class="tt-name">${idx.name}</span> <span class="tt-status ${isOpen ? "hours-open" : ""}">${isOpen ? "open now" : "closed"}</span>`,
       { className: "idx-tooltip", direction: "top", offset: [0, -8] }
     );
 
@@ -63,9 +65,17 @@ function updateMarker(data) {
   marker.off("mouseover mouseout");
 
   if (data.err) {
-    marker.setStyle({ fillColor: "#ef4444", color: "#ef4444", fillOpacity: 0.4, opacity: 0.2 });
+    const isOpen = getSessionState(data) === "open";
+    marker.setStyle({
+      fillColor: isOpen ? "#60a5fa" : "#334155",
+      color: isOpen ? "#93c5fd" : "#64748b",
+      fillOpacity: isOpen ? 0.92 : 0.55,
+      opacity: isOpen ? 0.4 : 0.8,
+      weight: isOpen ? 5 : 2,
+    });
+    marker.setRadius(isOpen ? 8 : 6);
     marker.bindTooltip(
-      `<span class="tt-name">${data.name}</span> <span class="tt-pct down">failed</span>`,
+      `<span class="tt-name">${data.name}</span> <span class="tt-status ${isOpen ? "hours-open" : ""}">${isOpen ? "open now" : "closed"}</span> <span class="tt-prev">price unavailable</span>`,
       { className: "idx-tooltip", direction: "top", offset: [0, -8] }
     );
     return;
@@ -122,18 +132,19 @@ function resetMarkersToLoading() {
   INDICES.forEach((idx) => {
     const m = markerMap[idx.sym];
     if (m) {
+      const isOpen = getSessionState(idx) === "open";
       m.setStyle({
-        fillColor: "#525c74",
-        color: "#525c74",
-        fillOpacity: 0.6,
-        opacity: 0.25,
-        weight: 3,
+        fillColor: isOpen ? "#60a5fa" : "#334155",
+        color: isOpen ? "#93c5fd" : "#64748b",
+        fillOpacity: isOpen ? 0.92 : 0.55,
+        opacity: isOpen ? 0.4 : 0.8,
+        weight: isOpen ? 5 : 2,
       });
-      m.setRadius(6);
+      m.setRadius(isOpen ? 8 : 6);
       m.unbindPopup();
       m.unbindTooltip();
       m.bindTooltip(
-        `<span class="tt-name">${idx.name}</span> <span class="tt-pct" style="color:var(--text-muted)">loading\u2026</span>`,
+        `<span class="tt-name">${idx.name}</span> <span class="tt-status ${isOpen ? "hours-open" : ""}">${isOpen ? "open now" : "closed"}</span>`,
         { className: "idx-tooltip", direction: "top", offset: [0, -8] }
       );
       m.off("mouseover mouseout");

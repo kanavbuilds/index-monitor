@@ -33,7 +33,11 @@ async function runConcurrent(tasks, limit, stagger) {
  */
 async function refresh() {
   const btn = document.getElementById("btnRef");
+  const feedStatus = document.getElementById("feedStatus");
   btn.classList.add("spin");
+  btn.disabled = true;
+  feedStatus.textContent = "Updating prices";
+  feedStatus.className = "feed-status loading";
 
   resetMarkersToLoading();
   setLatestResults(INDICES.map((i) => ({ ...i, ok: false, err: false })));
@@ -63,36 +67,24 @@ async function refresh() {
     }
   });
 
-  // 1 concurrent worker, 1200-1800ms stagger with jitter
-  // AllOrigins rate-limits aggressively, so we go fully sequential with randomness
-  await runConcurrent(tasks, 1, () => 1200 + Math.random() * 600);
-
-  // Retry failures after a longer cooldown
-  if (failed.length > 0) {
-    await new Promise((r) => setTimeout(r, 5000));
-    const retryTasks = failed.map((i) => async () => {
-      const idx = INDICES[i];
-      try {
-        const result = await fetchIndex(idx);
-        setCache(idx.sym, result);
-        const results = getLatestResults();
-        results[i] = result;
-        setLatestResults(results);
-        updateMarker(result);
-        rebindAllTooltips(getLatestResults());
-        renderSummary(getLatestResults(), INDICES.length);
-      } catch {
-        // leave as error
-      }
-    });
-    await runConcurrent(retryTasks, 1, () => 1200 + Math.random() * 600);
-  }
+  // Price data is an enhancement. Market-hours data renders immediately,
+  // so a slow public proxy never leaves the dashboard unusable.
+  await runConcurrent(tasks, 3, () => 250 + Math.random() * 250);
 
   rebindAllTooltips(getLatestResults());
   renderSummary(getLatestResults(), INDICES.length);
-  document.getElementById("ts").textContent =
-    "Updated " + new Date().toLocaleTimeString();
+  const loadedCount = getLatestResults().filter((result) => result.ok).length;
+  if (loadedCount > 0) {
+    feedStatus.textContent = `${loadedCount}/${INDICES.length} prices live`;
+    feedStatus.className = "feed-status live";
+    document.getElementById("ts").textContent = "Updated " + new Date().toLocaleTimeString();
+  } else {
+    feedStatus.textContent = "Market hours live";
+    feedStatus.className = "feed-status";
+    document.getElementById("ts").textContent = "Price feed unavailable";
+  }
   btn.classList.remove("spin");
+  btn.disabled = false;
 }
 
 /* ================================================================== */
@@ -116,4 +108,6 @@ document.getElementById("btnRef").addEventListener("click", refresh);
 
 initMap();
 placeLoadingMarkers();
+setLatestResults(INDICES.map((index) => ({ ...index, ok: false, err: false })));
+renderSummary(getLatestResults(), INDICES.length);
 refresh();
