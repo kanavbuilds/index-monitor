@@ -40,7 +40,11 @@ async function refresh() {
   feedStatus.className = "feed-status loading";
 
   resetMarkersToLoading();
-  setLatestResults(INDICES.map((i) => ({ ...i, ok: false, err: false })));
+  const cachedPrices = getCache();
+  setLatestResults(INDICES.map((index) => cachedPrices[index.sym]
+    ? { ...cachedPrices[index.sym], stale: true, err: false }
+    : { ...index, ok: false, err: false }));
+  getLatestResults().filter((result) => result.ok).forEach(updateMarker);
   renderSummary(getLatestResults(), INDICES.length);
 
   const failed = [];
@@ -51,14 +55,17 @@ async function refresh() {
       const result = await fetchIndex(idx);
       setCache(idx.sym, result);
       const results = getLatestResults();
-      results[i] = result;
+      results[i] = { ...result, stale: false };
       setLatestResults(results);
       updateMarker(result);
       rebindAllTooltips(getLatestResults());
       renderSummary(getLatestResults(), INDICES.length);
     } catch {
       failed.push(i);
-      const errData = { ...idx, ok: false, err: true };
+      const cachedResult = getCache()[idx.sym];
+      const errData = cachedResult
+        ? { ...cachedResult, stale: true, err: false }
+        : { ...idx, ok: false, err: true };
       const results = getLatestResults();
       results[i] = errData;
       setLatestResults(results);
@@ -73,11 +80,17 @@ async function refresh() {
 
   rebindAllTooltips(getLatestResults());
   renderSummary(getLatestResults(), INDICES.length);
-  const loadedCount = getLatestResults().filter((result) => result.ok).length;
-  if (loadedCount > 0) {
-    feedStatus.textContent = `${loadedCount}/${INDICES.length} prices live`;
+  const availablePrices = getLatestResults().filter((result) => result.ok);
+  const freshCount = availablePrices.filter((result) => !result.stale).length;
+  const cachedCount = availablePrices.length - freshCount;
+  if (availablePrices.length > 0) {
+    feedStatus.textContent = cachedCount > 0
+      ? `${freshCount} live · ${cachedCount} cached`
+      : `${freshCount}/${INDICES.length} prices live`;
     feedStatus.className = "feed-status live";
-    document.getElementById("ts").textContent = "Updated " + new Date().toLocaleTimeString();
+    document.getElementById("ts").textContent = freshCount > 0
+      ? "Updated " + new Date().toLocaleTimeString()
+      : "Using recent prices";
   } else {
     feedStatus.textContent = "Market hours live";
     feedStatus.className = "feed-status";

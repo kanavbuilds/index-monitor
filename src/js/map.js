@@ -109,7 +109,7 @@ function updateMarker(data) {
   marker.setRadius(baseRadius);
 
   // Simple tooltip during streaming (will be replaced by global-date tooltip later)
-  const statusLabel = isOpen ? "live" : "closed";
+  const statusLabel = data.stale ? "cached" : (isOpen ? "live" : "closed");
   const ttHtml = `<span class="tt-name">${data.name}</span> <span class="tt-pct ${positive ? "up" : "down"}">${formatPercent(data.changePercent)}</span> <span class="tt-status">${statusLabel}</span>`;
   marker.bindTooltip(ttHtml, { className: "idx-tooltip", direction: "top", offset: [0, -8] });
 

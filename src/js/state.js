@@ -2,9 +2,30 @@
 /*  State Management                                                  */
 /* ================================================================== */
 
-let cache = {};
+const PRICE_CACHE_KEY = "world-index-monitor-prices-v1";
+const PRICE_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+
+let cache = loadPersistedCache();
 let latestResults = [];
 let autoRefreshTimer = null;
+
+function loadPersistedCache() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PRICE_CACHE_KEY));
+    if (!saved || !saved.updatedAt || Date.now() - saved.updatedAt > PRICE_CACHE_MAX_AGE) return {};
+    return saved.data || {};
+  } catch {
+    return {};
+  }
+}
+
+function persistCache() {
+  try {
+    localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify({ updatedAt: Date.now(), data: cache }));
+  } catch {
+    // Storage can be unavailable in private browsing; the in-memory cache still works.
+  }
+}
 
 /**
  * Gets the current cache
@@ -21,6 +42,7 @@ function getCache() {
  */
 function setCache(key, value) {
   cache[key] = value;
+  persistCache();
 }
 
 /**

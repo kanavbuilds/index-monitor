@@ -22,7 +22,9 @@ function buildPopupHTML(data, globalDates) {
   const arrow = positive ? "\u25B2" : "\u25BC";
   const chgClass = positive ? "pos" : "neg";
 
-  const statusHTML = data.session === "open"
+  const statusHTML = data.stale
+    ? '<span class="popup-closed">\u25CF Recent price</span>'
+    : data.session === "open"
     ? '<span class="popup-open">\u25CF Live</span>'
     : '<span class="popup-closed">\u25CF Closed</span>';
 
